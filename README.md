@@ -107,7 +107,7 @@ updateGit pull -D -G $HOME$/git/ -J 15 -P -B -Y copy -Z /tmp/git_backup
 updateGit pull -D -G $HOME$/git/ -J 15 -P -B -Y stash -Z /tmp/git_backup
 
 # Pull many git repositories (except the filter)
-updateGit pull -D -G $HOME/git/ -P -J 15 -I "^project-.*,.*-api$" -E ".*-archive$,^temp-.*,deprecated-.*" -S "old-project,experimental-stuff,broken-repo"
+updateGit pull -D -G $HOME/git/ -P -J 15 -S "old-project,experimental-stuff,broken-repo"
 
 # Update binary without debug mode
 updateGit update
@@ -156,15 +156,6 @@ backup:
 
 # Repository filtering
 filter:
-  # Include only repositories matching these patterns (regex)
-  include_patterns:
-    - "^project-.*"
-    - ".*-api$"
-  # Exclude repositories matching these patterns (regex)
-  exclude_patterns:
-    - ".*-archive$"
-    - "^temp-.*"
-    - "deprecated-.*"
   # Specific repositories to skip (exact names)
   skip_repos:
     - "old-project"
@@ -186,8 +177,6 @@ export CLI_GIT_MAX_CONCURRENT=11;
 export CLI_BACKUP_ENABLED=true;
 export CLI_BACKUP_DIRECTORY="/path/to/backup";
 export CLI_BACKUP_STRATEGY="copy";
-export CLI_FILTER_INCLUDE_PATTERNS="^project-.*,.*-api$";
-export CLI_FILTER_EXCLUDE_PATTERNS=".*-archive$,^temp-.*,deprecated-.*";
 export CLI_FILTER_SKIP_REPOS="old-project,experimental-stuff,broken-repo";
 export CLI_CONFIG_FILE=".updateGit.yaml";
 
@@ -199,8 +188,6 @@ unset CLI_GIT_MAX_CONCURRENT;
 unset CLI_BACKUP_ENABLED;
 unset CLI_BACKUP_DIRECTORY;
 unset CLI_BACKUP_STRATEGY;
-unset CLI_FILTER_INCLUDE_PATTERNS;
-unset CLI_FILTER_EXCLUDE_PATTERNS;
 unset CLI_FILTER_SKIP_REPOS;
 unset CLI_CONFIG_FILE;
 ```

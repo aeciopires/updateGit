@@ -1,17 +1,13 @@
-// Package filter provides repository filtering capabilities based on include/exclude patterns and skip lists.
+// Package filter provides repository filtering capabilities based on skip lists.
 // It allows selective processing of repositories based on user-defined criteria.
 package filter
 
 import (
-	"regexp"
-
 	"github.com/aeciopires/updateGit/internal/common"
 )
 
 // Filter represents repository filtering configuration
 type Filter struct {
-	IncludePattern *regexp.Regexp
-	ExcludePattern *regexp.Regexp
 	SkipRepos      map[string]bool
 }
 
@@ -26,29 +22,9 @@ func (e *FilterError) Error() string {
 }
 
 // NewFilter creates a new repository filter with the given patterns
-func NewFilter(includePattern, excludePattern string, skipRepos []string) (*Filter, error) {
+func NewFilter(skipRepos []string) (*Filter, error) {
 	filter := &Filter{
 		SkipRepos: make(map[string]bool),
-	}
-
-	// Compile include pattern
-	if includePattern != "" {
-		regex, err := regexp.Compile(includePattern)
-		if err != nil {
-			return nil, &FilterError{Pattern: includePattern, Err: err}
-		}
-		filter.IncludePattern = regex
-		common.Logger("debug", "Include pattern compiled. pattern=%s", includePattern)
-	}
-
-	// Compile exclude pattern
-	if excludePattern != "" {
-		regex, err := regexp.Compile(excludePattern)
-		if err != nil {
-			return nil, &FilterError{Pattern: excludePattern, Err: err}
-		}
-		filter.ExcludePattern = regex
-		common.Logger("debug", "Exclude pattern compiled. pattern=%s", excludePattern)
 	}
 
 	// Build skip repos map
@@ -57,8 +33,7 @@ func NewFilter(includePattern, excludePattern string, skipRepos []string) (*Filt
 		common.Logger("debug", "Repository added to skip list. repository=%s", repo)
 	}
 
-	common.Logger("info", "Repository filter configured. include_pattern=%s exclude_pattern=%s skip_count=%d",
-		includePattern, excludePattern, len(skipRepos))
+	common.Logger("info", "Repository filter configured. skip_count=%d", len(skipRepos))
 
 	return filter, nil
 }
@@ -71,18 +46,6 @@ func (f *Filter) ShouldProcess(repoName string) bool {
 		return false
 	}
 
-	// Check exclude pattern
-	if f.ExcludePattern != nil && f.ExcludePattern.MatchString(repoName) {
-		common.Logger("debug", "Repository excluded by pattern. repository=%s", repoName)
-		return false
-	}
-
-	// Check include pattern (if specified, repo must match)
-	if f.IncludePattern != nil && !f.IncludePattern.MatchString(repoName) {
-		common.Logger("debug", "Repository not included by pattern. repository=%s", repoName)
-		return false
-	}
-
 	common.Logger("debug", "Repository passes filter criteria. repository=%s", repoName)
 	return true
 }
@@ -90,16 +53,7 @@ func (f *Filter) ShouldProcess(repoName string) bool {
 // GetStats returns filtering statistics
 func (f *Filter) GetStats() map[string]interface{} {
 	stats := map[string]interface{}{
-		"has_include_pattern": f.IncludePattern != nil,
-		"has_exclude_pattern": f.ExcludePattern != nil,
 		"skip_count":          len(f.SkipRepos),
-	}
-
-	if f.IncludePattern != nil {
-		stats["include_pattern"] = f.IncludePattern.String()
-	}
-	if f.ExcludePattern != nil {
-		stats["exclude_pattern"] = f.ExcludePattern.String()
 	}
 
 	return stats

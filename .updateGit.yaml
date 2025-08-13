@@ -18,15 +18,6 @@ backup:
 
 # Repository filtering
 filter:
-  # Include only repositories matching these patterns (regex)
-  include_patterns:
-    - "^project-.*"
-    - ".*-api$"
-  # Exclude repositories matching these patterns (regex)
-  exclude_patterns:
-    - ".*-archive$"
-    - "^temp-.*"
-    - "deprecated-.*"
   # Specific repositories to skip (exact names)
   skip_repos:
     - "old-project"
@@ -41,8 +32,6 @@ filter:
 # export CLI_BACKUP_ENABLED=true;
 # export CLI_BACKUP_DIRECTORY="/path/to/backup";
 # export CLI_BACKUP_STRATEGY="copy";
-# export CLI_FILTER_INCLUDE_PATTERNS="^project-.*,.*-api$";
-# export CLI_FILTER_EXCLUDE_PATTERNS=".*-archive$,^temp-.*,deprecated-.*";
 # export CLI_FILTER_SKIP_REPOS="old-project,experimental-stuff,broken-repo";
 # export CLI_CONFIG_FILE=".updateGit.yaml";
 
@@ -54,7 +43,5 @@ filter:
 # unset CLI_BACKUP_ENABLED;
 # unset CLI_BACKUP_DIRECTORY;
 # unset CLI_BACKUP_STRATEGY;
-# unset CLI_FILTER_INCLUDE_PATTERNS;
-# unset CLI_FILTER_EXCLUDE_PATTERNS;
 # unset CLI_FILTER_SKIP_REPOS;
 # unset CLI_CONFIG_FILE;

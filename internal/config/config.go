@@ -27,8 +27,6 @@ type Config struct {
 	} `mapstructure:"backup"`
 
 	Filter struct {
-		IncludePatterns []string `mapstructure:"include_patterns" validate:"omitempty"`
-		ExcludePatterns []string `mapstructure:"exclude_patterns" validate:"omitempty"`
 		SkipRepos       []string `mapstructure:"skip_repos" validate:"omitempty"`
 	} `mapstructure:"filter"`
 }
@@ -93,8 +91,6 @@ func SetDefaultConfig() {
 	// Attention!!! The validator do not support ˜, $HOME or file globbing in values.
 	Properties.Backup.Directory = "./backups"
 	Properties.Backup.Strategy = "copy"
-	Properties.Filter.IncludePatterns = []string{}
-	Properties.Filter.ExcludePatterns = []string{}
 	Properties.Filter.SkipRepos = []string{}
 }
 

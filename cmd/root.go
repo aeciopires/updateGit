@@ -97,8 +97,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&config.Properties.Backup.Strategy, "backup-strategy", "Y", config.Properties.Backup.Strategy, "Backup strategy (e.g. 'copy', 'stash')")
 
 	// Filtering flags
-	rootCmd.PersistentFlags().StringSliceVarP(&config.Properties.Filter.IncludePatterns, "include-patterns", "I", config.Properties.Filter.IncludePatterns, "Include repositories matching pattern (regex)")
-	rootCmd.PersistentFlags().StringSliceVarP(&config.Properties.Filter.ExcludePatterns, "exclude-patterns", "E", config.Properties.Filter.ExcludePatterns, "Exclude repositories matching pattern (regex)")
 	rootCmd.PersistentFlags().StringSliceVarP(&config.Properties.Filter.SkipRepos, "skip-repos", "S", config.Properties.Filter.SkipRepos, "List of repository names to skip")
 }
 
@@ -122,8 +120,6 @@ func initConfig() {
 		"backup.enabled",
 		"backup.directory",
 		"backup.strategy",
-		"filter.include_patterns",
-		"filter.exclude_patterns",
 		"filter.skip_repos",
 	)
 

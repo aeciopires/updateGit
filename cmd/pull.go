@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/aeciopires/updateGit/internal/backup"
@@ -39,14 +38,12 @@ func init() {
 
 // runUpdate executes the main update logic with all enhanced features
 func runUpdate(baseDir string) error {
-	common.Logger("info", "Starting enhanced git repositories update. baseDir=%s parallel=%t max_concurrent=%d backup_enabled=%t backup_dir=%s filter_include=%s filter_exclude=%s skip_repos=%s",
+	common.Logger("info", "Starting enhanced git repositories update. baseDir=%s parallel=%t max_concurrent=%d backup_enabled=%t backup_dir=%s skip_repos=%s",
 		baseDir,
 		config.Properties.Git.Parallel,
 		config.Properties.Git.MaxConcurrent,
 		config.Properties.Backup.Enabled,
 		config.Properties.Backup.Directory,
-		config.Properties.Filter.IncludePatterns,
-		config.Properties.Filter.ExcludePatterns,
 		config.Properties.Filter.SkipRepos,
 	)
 
@@ -110,21 +107,10 @@ func runUpdate(baseDir string) error {
 
 // initializeFilter creates and configures the repository filter
 func initializeFilter() (*filter.Filter, error) {
-	includePattern := config.Properties.Filter.IncludePatterns
-	excludePattern := config.Properties.Filter.ExcludePatterns
 	skipRepos := config.Properties.Filter.SkipRepos
 
-	// Join slices into comma-separated strings
-	var includePatternStr, excludePatternStr string
-	if len(includePattern) > 0 {
-		includePatternStr = "(" + strings.Join(includePattern, "|") + ")"
-	}
-	if len(excludePattern) > 0 {
-		excludePatternStr = "(" + strings.Join(excludePattern, "|") + ")"
-	}
-
 	// Create filter
-	repoFilter, err := filter.NewFilter(includePatternStr, excludePatternStr, skipRepos)
+	repoFilter, err := filter.NewFilter(skipRepos)
 	if err != nil {
 		common.Logger("fatal", "Failed to create repository filter: %w", err)
 	}
