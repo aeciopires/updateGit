@@ -1,0 +1,60 @@
+# Git settings
+git:
+  # Base directory for git repositories
+  base_dir: "./git_repos"
+  # Enable parallel processing of git repositories
+  parallel_enabled: true
+  # Maximum number of concurrent git repository updates
+  max_concurrent: 5
+
+# Backup settings
+backup:
+  # Enable backup before updates
+  enabled: true
+  # Backup directory (relative or absolute path)
+  directory: "./git_backups"
+  # Backup strategy: "copy" or "stash"
+  strategy: "copy"
+
+# Repository filtering
+filter:
+  # Include only repositories matching these patterns (regex)
+  include_patterns:
+    - "^project-.*"
+    - ".*-api$"
+  # Exclude repositories matching these patterns (regex)
+  exclude_patterns:
+    - ".*-archive$"
+    - "^temp-.*"
+    - "deprecated-.*"
+  # Specific repositories to skip (exact names)
+  skip_repos:
+    - "old-project"
+    - "experimental-stuff"
+    - "broken-repo"
+
+# Examples of environment variable overrides:
+# export CLI_DEBUG=true;
+# export CLI_GIT_BASE_DIR="./git_repos2";
+# export CLI_GIT_PARALLEL_ENABLED=false;
+# export CLI_GIT_MAX_CONCURRENT=11;
+# export CLI_BACKUP_ENABLED=true;
+# export CLI_BACKUP_DIRECTORY="/path/to/backup";
+# export CLI_BACKUP_STRATEGY="copy";
+# export CLI_FILTER_INCLUDE_PATTERNS="^project-.*,.*-api$";
+# export CLI_FILTER_EXCLUDE_PATTERNS=".*-archive$,^temp-.*,deprecated-.*";
+# export CLI_FILTER_SKIP_REPOS="old-project,experimental-stuff,broken-repo";
+# export CLI_CONFIG_FILE=".updateGit.yaml";
+
+# Unset environement variables
+# unset CLI_DEBUG;
+# unset CLI_GIT_BASE_DIR;
+# unset CLI_GIT_PARALLEL_ENABLED;
+# unset CLI_GIT_MAX_CONCURRENT;
+# unset CLI_BACKUP_ENABLED;
+# unset CLI_BACKUP_DIRECTORY;
+# unset CLI_BACKUP_STRATEGY;
+# unset CLI_FILTER_INCLUDE_PATTERNS;
+# unset CLI_FILTER_EXCLUDE_PATTERNS;
+# unset CLI_FILTER_SKIP_REPOS;
+# unset CLI_CONFIG_FILE;
