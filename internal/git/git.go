@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/aeciopires/updateGit/internal/common"
+	"github.com/aeciopires/updateGit/internal/backup"
+	"github.com/aeciopires/updateGit/internal/filter"
 )
 
 // UpdateConfig holds configuration for updating repositories.
@@ -18,8 +20,8 @@ type UpdateConfig struct {
 	BaseDir       string
 	Parallel      ParallelUpdateConfig
 	BackupEnabled bool
-	BackupManager interface{}
-	Filter        interface{}
+	BackupManager *backup.BackupManager
+	Filter        *filter.Filter
 }
 
 // ParallelUpdateConfig holds parallel update settings.
@@ -185,19 +187,15 @@ func UpdateRepositoriesWithConfig(cfg UpdateConfig) error {
 
 	// Apply filter if set
 	if cfg.Filter != nil {
-		if f, ok := cfg.Filter.(interface {
-			ShouldProcess(repoName string) bool
-		}); ok {
-			var filtered []Repository
-			for _, r := range repositories {
-				if f.ShouldProcess(r.Name) {
-					filtered = append(filtered, r)
-				} else {
-					common.Logger("debug", "Repository excluded by filter. repository=%s", r.Name)
-				}
+		var filtered []Repository
+		for _, r := range repositories {
+			if cfg.Filter.ShouldProcess(r.Name) {
+				filtered = append(filtered, r)
+			} else {
+				common.Logger("debug", "Repository excluded by filter. repository=%s", r.Name)
 			}
-			repositories = filtered
 		}
+		repositories = filtered
 	}
 
 	successCount := 0
@@ -213,12 +211,8 @@ func UpdateRepositoriesWithConfig(cfg UpdateConfig) error {
 
 		// Backup if enabled
 		if cfg.BackupEnabled && cfg.BackupManager != nil {
-			if bm, ok := cfg.BackupManager.(interface {
-				CreateBackup(repoPath, repoName string) (interface{}, error)
-			}); ok {
-				if _, err := bm.CreateBackup(repo.Path, repo.Name); err != nil {
-					common.Logger("error", "Failed to create backup. repository=%s error=%v", repo.Name, err)
-				}
+			if _, err := cfg.BackupManager.CreateBackup(repo.Path, repo.Name); err != nil {
+				common.Logger("error", "Failed to create backup. repository=%s error=%v", repo.Name, err)
 			}
 		}
 

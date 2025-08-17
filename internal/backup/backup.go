@@ -107,7 +107,7 @@ func (bm *BackupManager) createStashBackup(repoPath, repoName string) (*BackupIn
 		return nil, &BackupError{Repository: repoName, Operation: "git stash", Err: fmt.Errorf("%v: %s", err, string(out))}
 	}
 	common.Logger("info", "Git stash backup created. repository=%s message=%s", repoName, stashMessage)
- 
+
 	return &BackupInfo{
 		Repository:   repoName,
 		BackupPath:   fmt.Sprintf("stash: %s", stashMessage),
@@ -120,6 +120,7 @@ func (bm *BackupManager) createStashBackup(repoPath, repoName string) (*BackupIn
 // createCopyBackup creates a file system copy backup
 func (bm *BackupManager) createCopyBackup(repoPath, repoName string) (*BackupInfo, error) {
 	backupPath := filepath.Join(bm.BackupDir, repoName)
+	common.Logger("debug", "Attempting copy backup. repo_name='%s', backup_path='%s'", repoName, backupPath)
 
 	if err := os.MkdirAll(backupPath, 0755); err != nil {
 		return nil, &BackupError{Repository: repoName, Operation: "create directory", Err: err}
@@ -129,7 +130,7 @@ func (bm *BackupManager) createCopyBackup(repoPath, repoName string) (*BackupInf
 		return nil, &BackupError{Repository: repoName, Operation: "copy files", Err: err}
 	}
 
-	common.Logger("info", "Copy backup created. repository=%s backup_path=%s", repoName, backupPath)
+	common.Logger("debug", "Finished copy backup for repository '%s'", repoName)
 
 	return &BackupInfo{
 		Repository:   repoName,
@@ -141,76 +142,86 @@ func (bm *BackupManager) createCopyBackup(repoPath, repoName string) (*BackupInf
 }
 
 // copyRepository copies the repository files to the backup directory
-// It skips the .git directory to avoid copying the repository metadata.
-// It returns an error if any file operation fails.
 func (bm *BackupManager) copyRepository(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+	common.Logger("debug", "Starting repository copy walk. src='%s'", src)
+	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			common.Logger("error", "Error accessing path '%s' during walk: %v", path, err)
 			return err
-		}
-		if info.IsDir() && info.Name() == ".git" {
-			return filepath.SkipDir
 		}
 
-		relPath, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
+		relPath, relErr := filepath.Rel(src, path)
+		if relErr != nil {
+			common.Logger("error", "Could not get relative path for '%s': %v", path, relErr)
+			return relErr
 		}
 		dstPath := filepath.Join(dst, relPath)
 
-		// Preserve symlinks
+		if info.IsDir() && info.Name() == ".git" {
+			common.Logger("debug", "Skipping .git directory: '%s'", path)
+			return filepath.SkipDir
+		}
+
 		if info.Mode()&os.ModeSymlink != 0 {
+			common.Logger("debug", "Copying symlink: '%s' -> '%s'", path, dstPath)
 			target, err := os.Readlink(path)
-			if err != nil {
-				return err
-			}
-			// Ensure parent dir exists
-			if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
-				return err
-			}
-			// Remove existing link/file if present to avoid EEXIST
+			if err != nil { return err }
+			if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil { return err }
 			_ = os.Remove(dstPath)
 			return os.Symlink(target, dstPath)
 		}
 
-
 		if info.IsDir() {
+			common.Logger("debug", "Creating directory: '%s'", dstPath)
 			return os.MkdirAll(dstPath, info.Mode())
 		}
 
+		common.Logger("debug", "Attempting to copy file: '%s' -> '%s'", path, dstPath)
 		return bm.copyFile(path, dstPath)
 	})
+
+	if err != nil {
+		common.Logger("error", "File walk finished with error: %v", err)
+	} else {
+		common.Logger("debug", "File walk completed successfully for src='%s'", src)
+	}
+	return err
 }
 
 // copyFile copies a single file from source to destination
-// It preserves the file mode and returns an error if any operation fails.
 func (bm *BackupManager) copyFile(src, dst string) error {
-	// Ensure parent directory exists
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		common.Logger("error", "copyFile: Failed to create parent dir for '%s': %v", dst, err)
 		return err
 	}
 
 	srcInfo, err := os.Stat(src)
 	if err != nil {
+		common.Logger("error", "copyFile: Failed to stat src '%s': %v", src, err)
 		return err
 	}
 
 	sourceFile, err := os.Open(src)
 	if err != nil {
+		common.Logger("error", "copyFile: Failed to open src '%s': %v", src, err)
 		return err
 	}
 	defer sourceFile.Close()
 
 	destFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, srcInfo.Mode())
 	if err != nil {
+		common.Logger("error", "copyFile: Failed to open dst '%s': %v", dst, err)
 		return err
 	}
 	defer destFile.Close()
 
-	if _, err := io.Copy(destFile, sourceFile); err != nil {
+	bytesCopied, err := io.Copy(destFile, sourceFile)
+	if err != nil {
+		common.Logger("error", "copyFile: Failed during io.Copy for '%s': %v", src, err)
 		return err
 	}
-	// Ensure final mode matches (in case umask modified at creation)
+
+	common.Logger("debug", "Successfully copied %d bytes for file: %s", bytesCopied, dst)
 	return os.Chmod(dst, srcInfo.Mode())
 }
 
@@ -220,7 +231,6 @@ func (bm *BackupManager) hasUncommittedChanges(repoPath string) bool {
 	cmd.Dir = repoPath
 	out, err := cmd.Output()
 	if err != nil {
-		// Be conservative: if we can't determine, assume there ARE changes to avoid data loss.
 		common.Logger("warn", "Failed to detect repo status, assuming changes exist. path=%s err=%v", repoPath, err)
 		return true
 	}
