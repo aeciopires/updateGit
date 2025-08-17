@@ -8,26 +8,26 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-//// ConfigStruct is a struct defined in the global context of the CLI
-//// to group all the properties that can be used/changed in different contexts
-//// and that can have custom values ​​according to the arguments of each subcommand
+// // ConfigStruct is a struct defined in the global context of the CLI
+// // to group all the properties that can be used/changed in different contexts
+// // and that can have custom values ​​according to the arguments of each subcommand
 type Config struct {
 	DefaultConfigFile string `mapstructure:"cli_config_file" validate:"omitempty"`
 
 	Git struct {
 		BaseDir       string `mapstructure:"base_dir" validate:"omitempty"`
-		Parallel      bool `mapstructure:"parallel_enabled" validate:"omitempty,boolean"`
-		MaxConcurrent int  `mapstructure:"max_concurrent" validate:"omitempty,number"`
+		Parallel      bool   `mapstructure:"parallel_enabled" validate:"omitempty,boolean"`
+		MaxConcurrent int    `mapstructure:"max_concurrent" validate:"omitempty,number"`
 	} `mapstructure:"git"`
 
 	Backup struct {
-		Enabled         bool     `mapstructure:"enabled" validate:"omitempty,boolean"`
-		Directory       string   `mapstructure:"directory" validate:"omitempty"`
-		Strategy        string   `mapstructure:"strategy" validate:"omitempty,alpha,lowercase,oneof=copy stash"`
+		Enabled   bool   `mapstructure:"enabled" validate:"omitempty,boolean"`
+		Directory string `mapstructure:"directory" validate:"omitempty"`
+		Strategy  string `mapstructure:"strategy" validate:"omitempty,alpha,lowercase,oneof=copy stash"`
 	} `mapstructure:"backup"`
 
 	Filter struct {
-		SkipRepos       []string `mapstructure:"skip_repos" validate:"omitempty"`
+		SkipRepos []string `mapstructure:"skip_repos" validate:"omitempty"`
 	} `mapstructure:"filter"`
 }
 
@@ -39,8 +39,9 @@ var (
 	// MINOR version when you add functionality in a backward compatible manner
 	// PATCH version when you make backward compatible bug fixes
 	// Reference: https://semver.org/
-	CLIVersion = "0.1.0"
-	CLIName    = "updateGit"
+	CLIVersion        = "0.1.0"
+	CLIName           = "updateGit"
+	CLICheckSumBinDir = "bin/"
 
 	// CommandsToCheck is a list of commands to check if they are installed
 	// and available in the PATH environment variable.
@@ -56,7 +57,7 @@ var (
 	//----------------------------
 	// Git configurations
 	//----------------------------
-  Timeout int = 30 // Default timeout for git operations in seconds
+	Timeout int = 30 // Default timeout for git operations in seconds
 
 	//----------------------------
 	// Linux/Unix configurations

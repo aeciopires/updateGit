@@ -103,9 +103,12 @@ func ApplyUpdate(release *GitHubRelease) {
 	}
 
 	// Verify the checksum
-	expectedChecksum, err := ParseChecksum(string(checksums), assetName)
+	expectedChecksumAssetName := config.CLICheckSumBinDir + assetName
+	common.Logger("info", "Verifying checksum of %s file...", expectedChecksumAssetName)
+
+	expectedChecksum, err := ParseChecksum(string(checksums), expectedChecksumAssetName)
 	if err != nil {
-		common.Logger("fatal", "Failed to find checksum for asset %s: %w", assetName, err)
+		common.Logger("fatal", "Failed to find checksum for asset %s: %w", expectedChecksumAssetName, err)
 	}
 
 	actualChecksum := sha256.Sum256(newBinaryBytes)
