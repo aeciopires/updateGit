@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/aeciopires/updateGit/internal/common"
+	"github.com/aeciopires/updateGit/internal/config"
 )
 
 // BackupStrategy represents different backup approaches
@@ -58,7 +59,7 @@ func NewBackupManager(backupDir string, strategy BackupStrategy) *BackupManager 
 	}
 
 	fullBackupDir := filepath.Join(backupDir, timestamp)
-	if err := os.MkdirAll(fullBackupDir, 0755); err != nil {
+	if err := os.MkdirAll(fullBackupDir, config.PermissionDir); err != nil {
 		common.Logger("fatal", "Failed to create backup directory. error=%v", err)
 	}
 
@@ -122,7 +123,7 @@ func (bm *BackupManager) createCopyBackup(repoPath, repoName string) (*BackupInf
 	backupPath := filepath.Join(bm.BackupDir, repoName)
 	common.Logger("debug", "Attempting copy backup. repo_name='%s', backup_path='%s'", repoName, backupPath)
 
-	if err := os.MkdirAll(backupPath, 0755); err != nil {
+	if err := os.MkdirAll(backupPath, config.PermissionDir); err != nil {
 		return nil, &BackupError{Repository: repoName, Operation: "create directory", Err: err}
 	}
 
@@ -166,7 +167,7 @@ func (bm *BackupManager) copyRepository(src, dst string) error {
 			common.Logger("debug", "Copying symlink: '%s' -> '%s'", path, dstPath)
 			target, err := os.Readlink(path)
 			if err != nil { return err }
-			if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil { return err }
+			if err := os.MkdirAll(filepath.Dir(dstPath), config.PermissionDir); err != nil { return err }
 			_ = os.Remove(dstPath)
 			return os.Symlink(target, dstPath)
 		}
@@ -190,7 +191,7 @@ func (bm *BackupManager) copyRepository(src, dst string) error {
 
 // copyFile copies a single file from source to destination
 func (bm *BackupManager) copyFile(src, dst string) error {
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dst), config.PermissionDir); err != nil {
 		common.Logger("error", "copyFile: Failed to create parent dir for '%s': %v", dst, err)
 		return err
 	}

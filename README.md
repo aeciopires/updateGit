@@ -196,7 +196,7 @@ unset CLI_CONFIG_FILE;
 
 ### Prerequisites
 
-- Go 1.24 or later
+- Go 1.25 or later
 - Git command-line tool
 - Make (optional, for using Makefile)
 
