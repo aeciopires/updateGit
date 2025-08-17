@@ -186,11 +186,11 @@ func UpdateRepositoriesWithConfig(cfg UpdateConfig) error {
 	// Apply filter if set
 	if cfg.Filter != nil {
 		if f, ok := cfg.Filter.(interface {
-			Match(repoName string) bool
+			ShouldProcess(repoName string) bool
 		}); ok {
 			var filtered []Repository
 			for _, r := range repositories {
-				if f.Match(r.Name) {
+				if f.ShouldProcess(r.Name) {
 					filtered = append(filtered, r)
 				} else {
 					common.Logger("debug", "Repository excluded by filter. repository=%s", r.Name)
@@ -214,9 +214,9 @@ func UpdateRepositoriesWithConfig(cfg UpdateConfig) error {
 		// Backup if enabled
 		if cfg.BackupEnabled && cfg.BackupManager != nil {
 			if bm, ok := cfg.BackupManager.(interface {
-				CreateBackup(repoPath, repoName string) error
+				CreateBackup(repoPath, repoName string) (interface{}, error)
 			}); ok {
-				if err := bm.CreateBackup(repo.Path, repo.Name); err != nil {
+				if _, err := bm.CreateBackup(repo.Path, repo.Name); err != nil {
 					common.Logger("error", "Failed to create backup. repository=%s error=%v", repo.Name, err)
 				}
 			}

@@ -101,10 +101,10 @@ updateGit pull -D -G $HOME/git/
 updateGit pull -D -G $HOME/git/ -P -J 15
 
 # Making backup (copy) of repositories before of pull many git repositories processing 15 repositories in parallel using debug mode
-updateGit pull -D -G $HOME$/git/ -J 15 -P -B -Y copy -Z /tmp/git_backup
+updateGit pull -D -G $HOME/git/ -J 15 -P -B -Y copy -Z /tmp/git_backup
 
 # Making backup (stash) of repositories before of pull many git repositories processing 15 repositories in parallel using debug mode
-updateGit pull -D -G $HOME$/git/ -J 15 -P -B -Y stash -Z /tmp/git_backup
+updateGit pull -D -G $HOME/git/ -J 15 -P -B -Y stash -Z /tmp/git_backup
 
 # Pull many git repositories (except the filter)
 updateGit pull -D -G $HOME/git/ -P -J 15 -S "old-project,experimental-stuff,broken-repo"
