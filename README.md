@@ -1,6 +1,6 @@
 # updateGit
 
-[![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)](https://golang.org/)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://opensource.org/license/gpl-3-0)
 [![Downloads](https://img.shields.io/github/downloads/aeciopires/updateGit/total?label=Downloads
 )](https://somsubhra.github.io/github-release-stats/?username=aeciopires&repository=updateGit&page=1&per_page=500)
