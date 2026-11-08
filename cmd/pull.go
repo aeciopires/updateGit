@@ -154,6 +154,8 @@ func runUpdate(ctx context.Context, baseDir string) int {
 		runCfg.BackupMaxConcurrent = cfg.Backup.MaxConcurrent
 		backupLimit = git.EffectiveBackupLimit(cfg.Backup.MaxConcurrent, workers)
 		common.Logger("info", "Backup enabled: strategy=%s directory=%s max_concurrent=%d", cfg.Backup.Strategy, cfg.Backup.Directory, backupLimit)
+	} else {
+		common.Logger("debug", "Backup disabled (enable it with --backup-enabled).")
 	}
 
 	var progress *output.Progress

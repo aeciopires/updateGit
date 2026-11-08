@@ -24,8 +24,8 @@ git:
 
 # Backup settings
 backup:
-  # Enable backup before updates
-  enabled: true
+  # Enable backup before updates (default false: backups use disk space)
+  enabled: false
   # Backup directory (relative or absolute path)
   directory: "./git_backups"
   # Backup strategy: "copy" or "stash"
@@ -66,7 +66,7 @@ log:
 # export CLI_GIT_MAX_DEPTH=3;
 # export CLI_GIT_EXCLUDE_DIRS="node_modules,vendor";
 # export CLI_GIT_SKIP_DIRTY=false;
-# export CLI_BACKUP_ENABLED=true;
+# export CLI_BACKUP_ENABLED=false;
 # export CLI_BACKUP_DIRECTORY="/path/to/backup";
 # export CLI_BACKUP_STRATEGY="copy";
 # export CLI_BACKUP_MAX_CONCURRENT=4;

@@ -79,7 +79,7 @@ This file guides Claude Code (and other AI agents) when working in this reposito
 - Parallelism: `-P/--git-parallel-enabled` (default true; disable with `=false`), `-J/--git-max-concurrent` (1-100, default 10), `-T/--git-timeout` (seconds, default 300).
 - Search: `-R/--git-max-depth` (1-6, default 2), `--git-exclude-dirs`.
 - Safety: `--git-skip-dirty` (default true; disable with `=false`) skips repositories with files not committed.
-- Backup: `-B`, `-Z`, `-Y copy|stash`, `--backup-max-concurrent` (1-100, default 4).
+- Backup: disabled by default (`backup.enabled: false`, saves disk); `-B/--backup-enabled` enables it and `--backup-enabled=false` disables it. `-Z`, `-Y copy|stash`, `--backup-max-concurrent` (1-100, default 4).
 - Filter: `-S/--skip-repos` (directory name or relative path).
 - Log/output: `-L/--log-level` (debug, info, warning, error), `-D/--debug` (= debug, has priority), `--color` (auto, always, never; respects `NO_COLOR`), `--progress` (auto, always, never), `-O/--log-file-enabled`, `--log-file-dir` (default `/tmp`), `--log-file-level`.
 - `updateGit update` checks GitHub releases and, after confirmation, self-updates the binary (only newer versions; exit 1 if canceled or on errors). Tests replace `latestRelease`, `applyUpdate` and `executablePath` in `cmd/update.go`. `-v`/`-V` show the version (`-V` also commit, build date, OS and arch).

@@ -169,6 +169,32 @@ func TestSkipDirtyDefaultAndFlag(t *testing.T) {
 	}
 }
 
+func TestBackupDisabledByDefaultAndFlag(t *testing.T) {
+	dir := isolate(t)
+	cfg, _, err := loadConfig(newFlags(t))
+	if err != nil || cfg.Backup.Enabled {
+		t.Fatalf("backup must be disabled by default: %v, %v", cfg.Backup.Enabled, err)
+	}
+	cfg, _, _ = loadConfig(newFlags(t, "-B"))
+	if !cfg.Backup.Enabled {
+		t.Error("-B must enable the backup")
+	}
+
+	// The flag disables the backup even when the config file and the env enable it.
+	t.Setenv("CLI_CONFIG_FILE", writeConfig(t, dir, "backup:\n  enabled: true\n"))
+	cfg, _, _ = loadConfig(newFlags(t))
+	if !cfg.Backup.Enabled {
+		t.Fatal("backup.enabled: true in the config file must enable the backup")
+	}
+	t.Setenv("CLI_BACKUP_ENABLED", "true")
+	for _, args := range [][]string{{"--backup-enabled=false"}, {"-B=false"}} {
+		cfg, _, _ = loadConfig(newFlags(t, args...))
+		if cfg.Backup.Enabled {
+			t.Errorf("%v must disable the backup", args)
+		}
+	}
+}
+
 func TestPullSkipsDirtyRepositories(t *testing.T) {
 	reposDir, _ := setupRepos(t, 2)
 	if err := os.WriteFile(filepath.Join(reposDir, "repo-a", "a"), []byte("local work"), 0644); err != nil {

@@ -166,7 +166,7 @@ For failures, updateGit reads the message of git and translates it into a short 
 
 ## Backups
 
-If you enable the backup (option `-B`), each repository gets a safety copy **right before** its update:
+The backup is **turned off by default**, so the updates do not fill your disk. If you enable it (option `-B`; turn it off again with `-B=false`), each repository gets a safety copy **right before** its update:
 
 - **copy**: the files are copied to a backup folder (`<backup folder>/<date-time>/<repository>`).
 - **stash**: the local changes are put aside by git itself (only when there are changes).

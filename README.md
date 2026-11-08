@@ -257,6 +257,7 @@ Host github.com
 
 ### Backup
 
+- **The backup is disabled by default**, so the updates do not fill the disk. Enable it with ``-B``/``--backup-enabled`` (``backup.enabled: true``, ``CLI_BACKUP_ENABLED=true``) and disable it with ``--backup-enabled=false`` (or ``-B=false``), which has priority over the config file and the environment variables.
 - ``-B``/``--backup-enabled`` creates a backup before the update of each repository: ``-Y copy`` (copy of the files, except ``.git``, to ``<backup-dir>/<timestamp>/<repository>``) or ``-Y stash`` (``git stash push -u``, only when there are local changes).
 - ``--backup-max-concurrent`` (default 4) limits the simultaneous backups, independent of ``-J``. For ``copy`` keep it low (disk I/O); ``stash`` is cheap and can use a higher value.
 - A backup failure is reported in the block and the update of the repository continues.
@@ -343,8 +344,8 @@ git:
 
 # Backup settings
 backup:
-  # Enable backup before updates
-  enabled: true
+  # Enable backup before updates (default false: backups use disk space)
+  enabled: false
   # Backup directory (relative or absolute path)
   directory: "./git_backups"
   # Backup strategy: "copy" or "stash"
@@ -391,7 +392,7 @@ export CLI_GIT_TIMEOUT=600;
 export CLI_GIT_MAX_DEPTH=3;
 export CLI_GIT_EXCLUDE_DIRS="node_modules,vendor";
 export CLI_GIT_SKIP_DIRTY=false;
-export CLI_BACKUP_ENABLED=true;
+export CLI_BACKUP_ENABLED=false;
 export CLI_BACKUP_DIRECTORY="/path/to/backup";
 export CLI_BACKUP_STRATEGY="copy";
 export CLI_BACKUP_MAX_CONCURRENT=4;

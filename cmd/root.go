@@ -155,7 +155,7 @@ func defineFlags(cmd *cobra.Command) {
 	f.Bool("git-skip-dirty", d.Git.SkipDirty, "Skip repositories with files not committed, to avoid losing work (disable with --git-skip-dirty=false)")
 
 	// Backup flags
-	f.BoolP("backup-enabled", "B", d.Backup.Enabled, "Create backup before updating")
+	f.BoolP("backup-enabled", "B", d.Backup.Enabled, "Create backup before updating (disabled by default; disable with =false)")
 	f.StringP("backup-dir", "Z", d.Backup.Directory, "Directory to store backups")
 	f.StringP("backup-strategy", "Y", d.Backup.Strategy, "Backup strategy (e.g. 'copy', 'stash')")
 	f.Int("backup-max-concurrent", d.Backup.MaxConcurrent, "Maximum number of simultaneous backups (1-100)")

@@ -42,6 +42,7 @@
 
 ## Changed
 
+- **Behavior change:** the backup is disabled by default (``backup.enabled: false``, also in the sample ``.updateGit.yaml``) to avoid filling the disk. Enable it with ``-B``/``--backup-enabled`` and disable it with ``--backup-enabled=false`` (priority over the config file and ``CLI_BACKUP_ENABLED``).
 - **Behavior change:** ``updateGit pull`` runs in parallel by default (``git.parallel_enabled: true``, 10 workers). Use ``--git-parallel-enabled=false`` or ``-J 1`` for the previous sequential behavior.
 - **Behavior change:** repositories in the second directory level are found by default (``--git-max-depth=2``). Use ``-R 1`` for the previous behavior.
 - **Behavior change:** the precedence of the configuration is now flags > environment variables > config file > defaults (before, the config file and the environment variables overrode the flags).
