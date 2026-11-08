@@ -1,0 +1,5 @@
+[CANCEL]  [3/50] slow (3.0s)
+          * main -> origin/main (ahead 2, behind 1)
+          ! Backup failed: disk full
+          > Canceled.
+

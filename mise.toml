@@ -1,0 +1,15 @@
+# Tool versions managed by mise (https://mise.jdx.dev)
+# Install with: make install-deps (or: mise install)
+[tools]
+# Build and runtime
+go = "1.27.3"
+trivy = "0.76.2"
+
+# Development checks (make check / make check-all)
+golangci-lint = "2.15.0"
+actionlint = "1.7.12"
+shellcheck = "0.11.0"
+# pre-commit runs with this Python version (the system Python may be too old)
+python = "3.14.10"
+pre-commit = "4.7.0"
+"go:golang.org/x/vuln/cmd/govulncheck" = "1.9.0"

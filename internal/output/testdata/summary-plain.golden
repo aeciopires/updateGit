@@ -1,0 +1,10 @@
+==================== Summary ====================
+Total 10 | Updated 2 | Failed 1 | Timeout 1 | Skipped 3 | Canceled 3 | 41.7s
+Failed: huge-monorepo (timeout after 5m0s), private-repo (authentication required)
+Skipped (detached HEAD): github/org-x/api
+Skipped (no upstream): scratch
+Skipped (uncommitted changes): github/wip
+Canceled: slow
+Not started (canceled): 2
+Filtered out (--skip-repos): broken-repo, old-project
+=================================================

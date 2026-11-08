@@ -1,0 +1,12 @@
+════════════════════════════ [1mSummary[0m ════════════════════════════
+  Total 10   [32m✔ Updated 2[0m   [31m✘ Failed 1[0m   [33m⏱ Timeout 1[0m   [33m⏭ Skipped 3[0m   [33m⊘ Canceled 3[0m   [90m⌛ 41.7s[0m
+  Failed:
+    [33m⏱[0m huge-monorepo   [33mtimeout after 5m0s[0m
+    [31m✘[0m private-repo    [31mauthentication required[0m
+  Skipped (detached HEAD): github/org-x/api
+  Skipped (no upstream): scratch
+  Skipped (uncommitted changes): github/wip
+  Canceled: slow
+  Not started (canceled): 2
+  Filtered out (--skip-repos): broken-repo, old-project
+═════════════════════════════════════════════════════════════════

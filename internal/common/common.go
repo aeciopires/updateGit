@@ -7,17 +7,9 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
-	"runtime"
 	"strings"
-	"time"
 
-	"github.com/aeciopires/updateGit/internal/config"
 	"github.com/go-playground/validator/v10"
-
-	pkgerrors "github.com/pkg/errors"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	zerolog_pkgerrors "github.com/rs/zerolog/pkgerrors"
 )
 
 // FindExecutable checks if a file exists at the given path and is executable.
@@ -43,34 +35,40 @@ func FindExecutable(path string) (bool, error) {
 
 // CreateValidationErrorMessage based on validation tags.
 // If the tag is not recognized, it will return a generic message.
-func CreateValidationErrorMessage(err error, data interface{}) string {
+func CreateValidationErrorMessage(err error, data any) string {
 	var message string
 
-	for _, err := range err.(validator.ValidationErrors) {
-		if err.Tag() == "required" {
+	var validationErrors validator.ValidationErrors
+	if !errors.As(err, &validationErrors) {
+		return err.Error()
+	}
+
+	for _, err := range validationErrors {
+		switch err.Tag() {
+		case "required":
 			message += fmt.Sprintf("%s is required. ", err.Field())
-		} else if err.Tag() == "len" {
+		case "len":
 			message += fmt.Sprintf("%s must have %s characters. ", err.Field(), err.Param())
-		} else if err.Tag() == "oneof" {
+		case "oneof":
 			message += fmt.Sprintf("%s must be one of [%s]. ", err.Field(), strings.Join(strings.Split(err.Param(), " "), ", "))
-		} else if err.Tag() == "email" {
+		case "email":
 			message += fmt.Sprintf("%s must be a valid email. ", err.Field())
-		} else if err.Tag() == "min" {
+		case "min":
 			message += fmt.Sprintf("%s must be greater than %s. ", err.Field(), err.Param())
-		} else if err.Tag() == "max" {
+		case "max":
 			message += fmt.Sprintf("%s must be less than %s. ", err.Field(), err.Param())
-		} else if err.Tag() == "uuid" {
+		case "uuid":
 			message += fmt.Sprintf("%s must be a valid UUID. ", err.Field())
-		} else if err.Tag() == "number" {
+		case "number":
 			message += fmt.Sprintf("%s must be a number. ", err.Field())
-		} else if err.Tag() == "boolean" {
+		case "boolean":
 			message += fmt.Sprintf("%s must be a boolean. ", err.Field())
-		} else if err.Tag() == "string" {
+		case "string":
 			message += fmt.Sprintf("%s must be a string. ", err.Field())
-		} else if err.Tag() == "nefield" {
+		case "nefield":
 			param := GetParamName(data, err.Param())
 			message += fmt.Sprintf("%s must be different from %s. ", err.Field(), param)
-		} else {
+		default:
 			message += fmt.Sprintf("%s is invalid. ", err.Field())
 		}
 	}
@@ -80,10 +78,10 @@ func CreateValidationErrorMessage(err error, data interface{}) string {
 
 // GetParamName returns the name of the parameter based on the struct tag.
 // If the tag is not found, it returns the parameter name.
-func GetParamName(data interface{}, param string) string {
+func GetParamName(data any, param string) string {
 	topStruct := reflect.TypeOf(data)
 
-	if topStruct.Kind() == reflect.Ptr {
+	if topStruct.Kind() == reflect.Pointer {
 		topStruct = topStruct.Elem()
 	}
 
@@ -97,103 +95,12 @@ func GetParamName(data interface{}, param string) string {
 	return param
 }
 
-// Logger print message log accoding level, timestamp and trace.
-// Support the message with same behavour of fmt.Sprintf.
-//
-// References:
-//
-// https://www.geeksforgeeks.org/fmt-sprintf-function-in-golang-with-examples/
-// https://pkg.go.dev/fmt
-// https://pkg.go.dev/fmt#Sprintf
-// https://github.com/rs/zerolog
-//
-// Examples:
-//
-// common.Logger("fatal","[ERROR] Example message")
-// common.Logger("warning","[WARNING] config.Debug %v", *config.Debug)
-// common.Logger("DEBUG","[DEBUG] config.Debug %v", *config.Debug)
-// common.Logger("info","[INFO] Hello world!")
-//
-// Output:
-//
-// 2025-04-22T19:29:04-03:00 ERROR <nil> error="[DEBUG] config.Debug %!s(bool=true) stack=[{"func":"Logger","line":"146","source":"common.go"},{"func":"Execute","line":"64","source":"root.go"},{"func":"main","line":"8","source":"main.go"},{"func":"main","line":"283","source":"proc.go"},{"func":"goexit","line":"1223","source":"asm_arm64.s"}]
-// 2025-04-22T19:29:04-03:00 WARNING [WARNING] config.Debug true
-// 2025-04-22T19:29:04-03:00 DEBUG [DEBUG] config.Debug true
-// 2025-04-22T19:29:04-03:00 INFO [INFO] Hello world!
-func Logger(level string, message string, args ...interface{}) {
-	level = strings.ToLower(level)
-
-	log.Logger = log.Output(zerolog.ConsoleWriter{
-		Out:        os.Stdout,
-		TimeFormat: "2006-01-02 15:04:05",
-		FormatLevel: func(i interface{}) string {
-			return strings.ToUpper(fmt.Sprint(i))
-		},
-		FormatMessage: func(i interface{}) string {
-			return fmt.Sprint(i)
-		},
-		FormatTimestamp: func(i interface{}) string {
-			if ts, ok := i.(string); ok {
-				return ts
-			}
-			if t, ok := i.(time.Time); ok {
-				return t.Format("2006-01-02 15:04:05")
-			}
-			return fmt.Sprint(i)
-		},
-	})
-
-	// Set time some configurations of zerolog
-	zerolog.TimeFieldFormat = time.RFC3339
-	zerolog.ErrorStackMarshaler = zerolog_pkgerrors.MarshalStack
-
-	// Default level is info, unless debug flag is present
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	if config.Debug != nil && *config.Debug {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	}
-
-	// Get the message and arguments from Sprintf
-	formatted := fmt.Sprintf(message, args...)
-
-	// Get stack trace with line and file where the error occurred
-	if level == "error" || level == "fatal" || level == "panic" {
-		_, file, line, ok := runtime.Caller(1)
-		if ok {
-			errWithStack := pkgerrors.WithStack(fmt.Errorf("%s (%s:%d)", formatted, file, line))
-			switch level {
-			case "error":
-				// This log type does not interrupt the program
-				log.Error().Stack().Err(errWithStack).Msg(formatted)
-			case "fatal":
-				// This log type interrupt the program with error code 1
-				log.Fatal().Stack().Err(errWithStack).Msg(formatted)
-			case "panic":
-				// This log type interrupt the program with error code 1
-				log.Panic().Stack().Err(errWithStack).Msg(formatted)
-			}
-			return
-		}
-	}
-
-	// Levels below error (with stack trace)
-	switch level {
-	case "debug":
-		log.Debug().Msg(formatted)
-	case "warn", "warning":
-		log.Warn().Msg(formatted)
-	default:
-		log.Info().Msg(formatted)
-	}
-}
-
-// StringToEnvVar transform strings to uppercase and substitue '-' by '_' if exists
+// StringToEnvVar transform strings to uppercase and substitute '-' by '_' if exists
 func StringToEnvVar(s string) string {
 	s = strings.ToUpper(s)
 	s = strings.ReplaceAll(s, "-", "_")
 	return s
 }
-
 
 // CheckCommandsAvailable verifies if all specified command-line tools are installed
 // and accessible in the system's PATH.
@@ -246,4 +153,3 @@ func DirExists(path string) bool {
 	info, errStat := os.Stat(path)
 	return errStat == nil && info.IsDir()
 }
-

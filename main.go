@@ -1,3 +1,4 @@
+// updateGit discovers local git repositories and updates them with "git pull".
 package main
 
 import (

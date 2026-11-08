@@ -1,0 +1,9 @@
+[31m✘[0m [3/50] [1m[31mprivate-repo[0m                                       [90m0.4s[0m
+   [1;32m●[0m [1;32mdevelop[0m [90m→ origin/develop[0m · [33mbehind 3[0m
+   [90m○[0m main
+   [90m↓[0m [31mfatal: could not read Username for 'https://github.com': terminal prompts disabled[0m
+   [33m⚠[0m [33mAuthentication required. Run sequentially (--git-parallel-enabled=false) or configure ssh-agent / a git credential helper.[0m
+   [90m┆[0m [90mgit pull output:[0m
+   [90m┆[0m   [90mremote: hello[0m
+   [90m┆[0m   [90mfatal: could not read Username for 'https://github.com': terminal prompts disabled[0m
+

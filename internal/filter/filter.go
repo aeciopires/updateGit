@@ -3,12 +3,14 @@
 package filter
 
 import (
+	"path"
+
 	"github.com/aeciopires/updateGit/internal/common"
 )
 
 // Filter represents repository filtering configuration
 type Filter struct {
-	SkipRepos      map[string]bool
+	SkipRepos map[string]bool
 }
 
 // FilterError represents a filtering error
@@ -33,15 +35,17 @@ func NewFilter(skipRepos []string) (*Filter, error) {
 		common.Logger("debug", "Repository added to skip list. repository=%s", repo)
 	}
 
-	common.Logger("info", "Repository filter configured. skip_count=%d", len(skipRepos))
+	common.Logger("debug", "Repository filter configured. skip_count=%d", len(skipRepos))
 
 	return filter, nil
 }
 
-// ShouldProcess determines if a repository should be processed based on filter criteria
+// ShouldProcess determines if a repository should be processed based on filter criteria.
+// repoName can be the directory name ("repo") or the path relative to the base
+// directory ("github/repo"): the skip list matches both.
 func (f *Filter) ShouldProcess(repoName string) bool {
-	// Check skip list first
-	if f.SkipRepos[repoName] {
+	// Check skip list first (relative path or directory name)
+	if f.SkipRepos[repoName] || f.SkipRepos[path.Base(repoName)] {
 		common.Logger("debug", "Repository skipped (in skip list). repository=%s", repoName)
 		return false
 	}
@@ -51,9 +55,9 @@ func (f *Filter) ShouldProcess(repoName string) bool {
 }
 
 // GetStats returns filtering statistics
-func (f *Filter) GetStats() map[string]interface{} {
-	stats := map[string]interface{}{
-		"skip_count":          len(f.SkipRepos),
+func (f *Filter) GetStats() map[string]any {
+	stats := map[string]any{
+		"skip_count": len(f.SkipRepos),
 	}
 
 	return stats

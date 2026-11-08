@@ -1,0 +1,6 @@
+[33m⏭[0m [3/50] [1m[33mgithub/wip[0m                                         [90m0.1s[0m
+   [1;32m●[0m [1;32mfeature/login[0m [90m→ origin/feature/login[0m · [33mahead 1[0m
+   [90m○[0m main
+   [90m↓[0m [90mSkipped pull: files not committed in branch feature/login (2 modified, 1 untracked).[0m
+   [33m⚠[0m [33mCommit or stash the changes, or use --git-skip-dirty=false (with --backup-enabled --backup-strategy stash to keep them).[0m
+

@@ -1,11 +1,26 @@
+# Precedence: flags > environment variables (CLI_*) > this file > defaults
+
 # Git settings
 git:
   # Base directory for git repositories
   base_dir: "./git_repos"
   # Enable parallel processing of git repositories
   parallel_enabled: true
-  # Maximum number of concurrent git repository updates
+  # Maximum number of concurrent git repository updates (1-100)
   max_concurrent: 5
+  # Timeout (in seconds) for each "git pull"
+  timeout: 300
+  # Directory levels searched for repositories: 1 (only base_dir children) to 6 (maximum). Default: 2.
+  # The search never goes into a directory that is already a git repository.
+  max_depth: 2
+  # Directory names ignored by the search
+  exclude_dirs:
+    - "node_modules"
+    - "vendor"
+    - ".terraform"
+    - ".venv"
+  # Skip repositories with files not committed in the current branch (avoids losing work)
+  skip_dirty: true
 
 # Backup settings
 backup:
@@ -15,24 +30,53 @@ backup:
   directory: "./git_backups"
   # Backup strategy: "copy" or "stash"
   strategy: "copy"
+  # Maximum number of simultaneous backups (1-100, independent of git.max_concurrent)
+  max_concurrent: 4
 
 # Repository filtering
 filter:
-  # Specific repositories to skip (exact names)
+  # Repositories to skip: directory name (e.g. "broken-repo") or path relative
+  # to git.base_dir (e.g. "github/broken-repo")
   skip_repos:
     - "old-project"
     - "experimental-stuff"
     - "broken-repo"
+
+# Log and output settings
+log:
+  # Minimum log level: debug, info, warning, error
+  level: "info"
+  # Colored output: auto (only in a terminal and without NO_COLOR), always, never
+  color: "auto"
+  # Live progress bar: auto (only in a terminal with more than one worker), always, never
+  progress: "auto"
+  file:
+    # Save the log to <directory>/updateGit_YYYY-MM-DD_HH-MM-SS.log (permission 0600)
+    enabled: false
+    directory: "/tmp"
+    # Minimum log level saved in the file. Empty = same as log.level
+    level: ""
 
 # Examples of environment variable overrides:
 # export CLI_DEBUG=true;
 # export CLI_GIT_BASE_DIR="./git_repos2";
 # export CLI_GIT_PARALLEL_ENABLED=false;
 # export CLI_GIT_MAX_CONCURRENT=11;
+# export CLI_GIT_TIMEOUT=600;
+# export CLI_GIT_MAX_DEPTH=3;
+# export CLI_GIT_EXCLUDE_DIRS="node_modules,vendor";
+# export CLI_GIT_SKIP_DIRTY=false;
 # export CLI_BACKUP_ENABLED=true;
 # export CLI_BACKUP_DIRECTORY="/path/to/backup";
 # export CLI_BACKUP_STRATEGY="copy";
+# export CLI_BACKUP_MAX_CONCURRENT=4;
 # export CLI_FILTER_SKIP_REPOS="old-project,experimental-stuff,broken-repo";
+# export CLI_LOG_LEVEL="warning";
+# export CLI_LOG_COLOR="never";
+# export CLI_LOG_PROGRESS="never";
+# export CLI_LOG_FILE_ENABLED=true;
+# export CLI_LOG_FILE_DIRECTORY="/tmp";
+# export CLI_LOG_FILE_LEVEL="debug";
 # export CLI_CONFIG_FILE=".updateGit.yaml";
 
 # Unset environement variables
@@ -40,8 +84,19 @@ filter:
 # unset CLI_GIT_BASE_DIR;
 # unset CLI_GIT_PARALLEL_ENABLED;
 # unset CLI_GIT_MAX_CONCURRENT;
+# unset CLI_GIT_TIMEOUT;
+# unset CLI_GIT_MAX_DEPTH;
+# unset CLI_GIT_EXCLUDE_DIRS;
+# unset CLI_GIT_SKIP_DIRTY;
 # unset CLI_BACKUP_ENABLED;
 # unset CLI_BACKUP_DIRECTORY;
 # unset CLI_BACKUP_STRATEGY;
+# unset CLI_BACKUP_MAX_CONCURRENT;
 # unset CLI_FILTER_SKIP_REPOS;
+# unset CLI_LOG_LEVEL;
+# unset CLI_LOG_COLOR;
+# unset CLI_LOG_PROGRESS;
+# unset CLI_LOG_FILE_ENABLED;
+# unset CLI_LOG_FILE_DIRECTORY;
+# unset CLI_LOG_FILE_LEVEL;
 # unset CLI_CONFIG_FILE;

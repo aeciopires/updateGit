@@ -1,0 +1,51 @@
+# Git hooks managed by pre-commit (https://pre-commit.com)
+# Install with: make install-hooks
+# The checks call the Makefile targets, so the rules are the same locally, in the hooks and in the CI.
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+        stages: [pre-commit]
+      - id: check-merge-conflict
+        stages: [pre-commit]
+      - id: end-of-file-fixer
+        stages: [pre-commit]
+        exclude: '^internal/output/testdata/'
+      - id: trailing-whitespace
+        stages: [pre-commit]
+        args: [--markdown-linebreak-ext=md]
+        exclude: '^internal/output/testdata/'
+
+  - repo: local
+    hooks:
+      - id: make-fmt-check
+        name: make fmt-check (gofmt)
+        entry: make fmt-check
+        language: system
+        pass_filenames: false
+        types: [go]
+        stages: [pre-commit]
+      - id: make-lint
+        name: make lint (golangci-lint)
+        entry: make lint
+        language: system
+        pass_filenames: false
+        types: [go]
+        stages: [pre-commit]
+      - id: make-test-short
+        name: make test-short (fast unit tests)
+        entry: make test-short
+        language: system
+        pass_filenames: false
+        types: [go]
+        stages: [pre-commit]
+      - id: make-check-all
+        name: make check-all (all checks, build and artifacts)
+        entry: make check-all
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

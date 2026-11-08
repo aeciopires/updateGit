@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'     # 0.2.0
+      - '[0-9]+.[0-9]+.[0-9]+-*'   # 0.2.0-rc.1 (pre-release)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # create the release and upload the assets
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      # Actions pinned by commit SHA (the comment shows the version)
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Do not keep the GitHub token in .git/config (not needed after the checkout)
+          persist-credentials: false
+
+      - name: Install tools (versions from mise.toml)
+        uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+
+      - name: Validate tag (semantic version) and CLIVersion
+        run: |
+          semver='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?$'
+          if ! echo "$TAG" | grep -Eq "$semver"; then
+            echo "::error::Tag '$TAG' is not a semantic version (MAJOR.MINOR.PATCH, without 'v' prefix)"
+            exit 1
+          fi
+          cli_version="$(go run . -v)"
+          if [ "$TAG" != "$cli_version" ]; then
+            echo "::error::Tag '$TAG' differs from config.CLIVersion '$cli_version' (internal/config/config.go)"
+            exit 1
+          fi
+
+      - name: Checks, build and artifacts verification
+        run: make check-all VERSION="$TAG"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes='See changes in [CHANGELOG.md](https://github.com/aeciopires/updateGit/blob/main/CHANGELOG.md) file'
+          prerelease=""
+          case "$TAG" in *-*) prerelease="--prerelease" ;; esac
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists, replacing the assets"
+            gh release upload "$TAG" bin/* --clobber
+          else
+            # shellcheck disable=SC2086 # $prerelease is empty or a single flag
+            gh release create "$TAG" bin/* \
+              --title "$TAG" \
+              --notes "$notes" \
+              --verify-tag \
+              $prerelease
+          fi

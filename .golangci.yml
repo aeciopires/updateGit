@@ -1,0 +1,85 @@
+# golangci-lint configuration (https://golangci-lint.run)
+# Run with: make lint (or make lint-fix to apply automatic fixes)
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  # standard = errcheck, govet, ineffassign, staticcheck, unused
+  default: standard
+  enable:
+    - bodyclose # HTTP response bodies must be closed
+    - copyloopvar # unnecessary loop variable copies
+    - durationcheck # wrong multiplication of durations
+    - errname # error types named XxxError
+    - errorlint # correct use of %w, errors.Is and errors.As
+    - gocritic # bugs, performance and style issues
+    - gosec # security issues
+    - misspell # misspelled English words
+    - nilerr # returning nil when an error was found
+    - noctx # HTTP requests and commands must receive a context (timeouts/cancellation)
+    - nolintlint # every //nolint must name the linter and explain why
+    - revive # style and correctness rules
+    - unconvert # unnecessary type conversions
+    - usestdlibvars # use the constants of the standard library (http.MethodGet...)
+
+  settings:
+    govet:
+      enable:
+        - printf
+      settings:
+        printf:
+          # common.Logger works like fmt.Printf: check the format verbs
+          # (e.g. "%w" is not supported, use "%v").
+          funcs:
+            - github.com/aeciopires/updateGit/internal/common.Logger
+    misspell:
+      locale: US
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: errorf
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: var-declaration
+        - name: var-naming
+    gosec:
+      excludes:
+        # G204: the CLI executes "git" with arguments built from repository
+        # paths found on disk. Commands are never run through a shell.
+        - G204
+        # G304: files are read/written from paths provided by the user
+        # (config file, backup and log directories). This is expected.
+        - G304
+
+  exclusions:
+    presets:
+      - std-error-handling
+    rules:
+      # Tests create temporary files and directories with default permissions.
+      - path: _test\.go
+        linters:
+          - gosec
+
+formatters:
+  enable:
+    - gofmt

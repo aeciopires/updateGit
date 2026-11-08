@@ -6,13 +6,15 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/aeciopires/updateGit/internal/config"
 	"github.com/aeciopires/updateGit/internal/common"
+	"github.com/aeciopires/updateGit/internal/config"
 )
 
 // PrintLongVersion prints the application version
 func PrintLongVersion() {
 	fmt.Printf("Version: %s\n", config.CLIVersion)
+	fmt.Printf("Commit: %s\n", config.CLICommit)
+	fmt.Printf("Build date: %s\n", config.CLIBuildDate)
 }
 
 // PrintShortVersion prints only number of the application version

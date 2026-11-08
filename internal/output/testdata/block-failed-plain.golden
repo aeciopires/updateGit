@@ -1,0 +1,9 @@
+[FAIL]    [3/50] private-repo (0.4s)
+          * develop -> origin/develop (behind 3)
+          - others: main
+          > fatal: could not read Username for 'https://github.com': terminal prompts disabled
+          ! Authentication required. Run sequentially (--git-parallel-enabled=false) or configure ssh-agent / a git credential helper.
+          | git pull output:
+          |   remote: hello
+          |   fatal: could not read Username for 'https://github.com': terminal prompts disabled
+

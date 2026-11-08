@@ -4,6 +4,7 @@
 package backup
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -14,6 +15,9 @@ import (
 	"github.com/aeciopires/updateGit/internal/common"
 	"github.com/aeciopires/updateGit/internal/config"
 )
+
+// gitCommandTimeout limits the git commands of the backup (status and stash)
+const gitCommandTimeout = 2 * time.Minute
 
 // BackupStrategy represents different backup approaches
 type BackupStrategy string
@@ -69,14 +73,14 @@ func NewBackupManager(backupDir string, strategy BackupStrategy) *BackupManager 
 		Timestamp: timestamp,
 	}
 
-	common.Logger("info", "Backup manager initialized. backup_dir=%s strategy=%s timestamp=%s", fullBackupDir, strategy, timestamp)
+	common.Logger("debug", "Backup manager initialized. backup_dir=%s strategy=%s timestamp=%s", fullBackupDir, strategy, timestamp)
 
 	return manager
 }
 
 // CreateBackup creates a backup of the specified repository
 func (bm *BackupManager) CreateBackup(repoPath, repoName string) (*BackupInfo, error) {
-	common.Logger("info", "Creating repository backup. repository=%s path=%s strategy=%s", repoName, repoPath, bm.Strategy)
+	common.Logger("debug", "Creating repository backup. repository=%s path=%s strategy=%s", repoName, repoPath, bm.Strategy)
 
 	switch bm.Strategy {
 	case StrategyStash:
@@ -102,12 +106,14 @@ func (bm *BackupManager) createStashBackup(repoPath, repoName string) (*BackupIn
 	}
 
 	stashMessage := fmt.Sprintf("updateGit backup %s", bm.Timestamp)
-	cmd := exec.Command("git", "stash", "push", "-u", "-m", stashMessage)
+	ctx, cancel := context.WithTimeout(context.Background(), gitCommandTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "git", "stash", "push", "-u", "-m", stashMessage)
 	cmd.Dir = repoPath
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return nil, &BackupError{Repository: repoName, Operation: "git stash", Err: fmt.Errorf("%v: %s", err, string(out))}
+		return nil, &BackupError{Repository: repoName, Operation: "git stash", Err: fmt.Errorf("%w: %s", err, string(out))}
 	}
-	common.Logger("info", "Git stash backup created. repository=%s message=%s", repoName, stashMessage)
+	common.Logger("debug", "Git stash backup created. repository=%s message=%s", repoName, stashMessage)
 
 	return &BackupInfo{
 		Repository:   repoName,
@@ -166,10 +172,15 @@ func (bm *BackupManager) copyRepository(src, dst string) error {
 		if info.Mode()&os.ModeSymlink != 0 {
 			common.Logger("debug", "Copying symlink: '%s' -> '%s'", path, dstPath)
 			target, err := os.Readlink(path)
-			if err != nil { return err }
-			if err := os.MkdirAll(filepath.Dir(dstPath), config.PermissionDir); err != nil { return err }
+			if err != nil {
+				return err
+			}
+			if err := os.MkdirAll(filepath.Dir(dstPath), config.PermissionDir); err != nil {
+				return err
+			}
 			_ = os.Remove(dstPath)
-			return os.Symlink(target, dstPath)
+			// The symlink is recreated as is (it is not followed), inside the backup directory
+			return os.Symlink(target, dstPath) //nolint:gosec // G122: backup of a local repository owned by the user
 		}
 
 		if info.IsDir() {
@@ -228,7 +239,9 @@ func (bm *BackupManager) copyFile(src, dst string) error {
 
 // hasUncommittedChanges checks if there are uncommitted changes in the repository
 func (bm *BackupManager) hasUncommittedChanges(repoPath string) bool {
-	cmd := exec.Command("git", "status", "--porcelain")
+	ctx, cancel := context.WithTimeout(context.Background(), gitCommandTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "git", "status", "--porcelain")
 	cmd.Dir = repoPath
 	out, err := cmd.Output()
 	if err != nil {
@@ -252,8 +265,8 @@ func (bm *BackupManager) CleanupOldBackups(days int) error {
 }
 
 // GetBackupStats returns statistics about the backup manager
-func (bm *BackupManager) GetBackupStats() map[string]interface{} {
-	return map[string]interface{}{
+func (bm *BackupManager) GetBackupStats() map[string]any {
+	return map[string]any{
 		"backup_dir": bm.BackupDir,
 		"strategy":   bm.Strategy,
 		"timestamp":  bm.Timestamp,

@@ -1,0 +1,6 @@
+[SKIP]    [3/50] github/wip (0.1s)
+          * feature/login -> origin/feature/login (ahead 1)
+          - others: main
+          > Skipped pull: files not committed in branch feature/login (2 modified, 1 untracked).
+          ! Commit or stash the changes, or use --git-skip-dirty=false (with --backup-enabled --backup-strategy stash to keep them).
+

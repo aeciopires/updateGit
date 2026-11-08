@@ -1,40 +1,27 @@
 // Package git provides functions to manage and update git repositories.
-// It includes repository discovery, branch management, and git operations.
+// It includes repository discovery, branch information, and the parallel
+// execution of "git pull" (see runner.go).
 package git
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/aeciopires/updateGit/internal/common"
-	"github.com/aeciopires/updateGit/internal/backup"
-	"github.com/aeciopires/updateGit/internal/filter"
 )
-
-// UpdateConfig holds configuration for updating repositories.
-type UpdateConfig struct {
-	BaseDir       string
-	Parallel      ParallelUpdateConfig
-	BackupEnabled bool
-	BackupManager *backup.BackupManager
-	Filter        *filter.Filter
-}
-
-// ParallelUpdateConfig holds parallel update settings.
-type ParallelUpdateConfig struct {
-	Enabled       bool
-	MaxConcurrent int
-	Timeout       time.Duration
-}
 
 // Repository represents a git repository with its metadata
 type Repository struct {
-	Path          string
-	Name          string
+	// Path is the absolute path of the repository
+	Path string
+	// Name is the path relative to the base directory (e.g. "updateGit" or "github/helm-charts")
+	Name string
+	// CurrentBranch is only filled by FindRepositories (kept for compatibility)
 	CurrentBranch string
 	IsValid       bool
 }
@@ -50,24 +37,43 @@ func (e *GitError) Error() string {
 	return fmt.Sprintf("git %s failed for repository '%s': %v", e.Operation, e.Repository, e.Err)
 }
 
-// IsGitRepository checks if a directory contains a git repository
+// Unwrap returns the original error.
+func (e *GitError) Unwrap() error { return e.Err }
+
+// IsGitRepository checks if a directory contains a git repository: ".git" can be
+// a directory (normal clone) or a file starting with "gitdir:" (worktree or submodule).
 func IsGitRepository(path string) bool {
-	gitDir := filepath.Join(path, ".git")
-	if info, err := os.Stat(gitDir); err == nil && info.IsDir() {
+	gitPath := filepath.Join(path, ".git")
+	info, err := os.Stat(gitPath)
+	if err != nil {
+		common.Logger("debug", "Not a git repository. path=%s", path)
+		return false
+	}
+	if info.IsDir() {
 		common.Logger("debug", "Found git repository. repository=%s", path)
 		return true
 	}
-
+	content, err := os.ReadFile(gitPath)
+	if err == nil && bytes.HasPrefix(bytes.TrimSpace(content), []byte("gitdir:")) {
+		common.Logger("debug", "Found git worktree/submodule. repository=%s", path)
+		return true
+	}
 	common.Logger("debug", "Not a git repository. path=%s", path)
 	return false
 }
 
+// gitOutput runs a git command in repoPath and returns its standard output.
+func gitOutput(ctx context.Context, repoPath string, args ...string) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Dir = repoPath
+	cmd.Env = append(os.Environ(), "LC_ALL=C")
+	out, err := cmd.Output()
+	return string(out), err
+}
+
 // GetCurrentBranch returns the current branch name for a repository
 func GetCurrentBranch(repoPath string) (string, error) {
-	cmd := exec.Command("git", "symbolic-ref", "HEAD")
-	cmd.Dir = repoPath
-
-	output, err := cmd.Output()
+	output, err := gitOutput(context.Background(), repoPath, "symbolic-ref", "HEAD")
 	if err != nil {
 		common.Logger("debug", "Failed to get current branch. repository=%s error=%v", repoPath, err)
 		return "unknown", &GitError{
@@ -77,7 +83,7 @@ func GetCurrentBranch(repoPath string) (string, error) {
 		}
 	}
 
-	branchRef := strings.TrimSpace(string(output))
+	branchRef := strings.TrimSpace(output)
 	parts := strings.Split(branchRef, "/")
 	if len(parts) >= 3 {
 		branchName := strings.Join(parts[2:], "/")
@@ -88,12 +94,9 @@ func GetCurrentBranch(repoPath string) (string, error) {
 	return branchRef, nil
 }
 
-// GetBranches returns all local branches for a repository
+// GetBranches returns all local branches for a repository (output of "git branch")
 func GetBranches(repoPath string) (string, error) {
-	cmd := exec.Command("git", "branch")
-	cmd.Dir = repoPath
-
-	output, err := cmd.Output()
+	output, err := gitOutput(context.Background(), repoPath, "branch")
 	if err != nil {
 		return "", &GitError{
 			Repository: repoPath,
@@ -102,14 +105,17 @@ func GetBranches(repoPath string) (string, error) {
 		}
 	}
 
-	return string(output), nil
+	return output, nil
 }
 
-// PullRepository executes git pull on a repository
+// PullRepository executes git pull on a repository, connected to the terminal.
+//
+// Deprecated: kept for compatibility. The "pull" command uses Run (runner.go),
+// which captures the output and applies a timeout.
 func PullRepository(repoPath string) error {
 	common.Logger("info", "Executing git pull. repository=%s", repoPath)
 
-	cmd := exec.Command("git", "pull")
+	cmd := exec.CommandContext(context.Background(), "git", "pull")
 	cmd.Dir = repoPath
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -127,114 +133,20 @@ func PullRepository(repoPath string) error {
 	return nil
 }
 
-// FindRepositories discovers all git repositories in a base directory
+// FindRepositories discovers the git repositories in the first level of baseDir
+// and fills their current branch. Kept for compatibility: the "pull" command uses
+// DiscoverRepositories (discovery.go).
 func FindRepositories(baseDir string) ([]Repository, error) {
-	common.Logger("info", "Scanning for git repositories. baseDir=%s", baseDir)
-
-	var repositories []Repository
-
-	entries, err := os.ReadDir(baseDir)
+	result, err := DiscoverRepositories(DiscoveryOptions{BaseDir: baseDir, MaxDepth: 1})
 	if err != nil {
-		common.Logger("fatal", "Failed to read directory '%s': %v", baseDir, err)
+		return nil, err
 	}
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
+	for i := range result.Repos {
+		branch, err := GetCurrentBranch(result.Repos[i].Path)
+		if err != nil {
+			common.Logger("warning", "Could not determine current branch. repository=%s error=%v", result.Repos[i].Path, err)
 		}
-
-		repoPath := filepath.Join(baseDir, entry.Name())
-
-		if IsGitRepository(repoPath) {
-			currentBranch, err := GetCurrentBranch(repoPath)
-			if err != nil {
-				common.Logger("warning", "Could not determine current branch. repository=%s error=%v", repoPath, err)
-			}
-
-			repo := Repository{
-				Path:          repoPath,
-				Name:          entry.Name(),
-				CurrentBranch: currentBranch,
-				IsValid:       true,
-			}
-
-			repositories = append(repositories, repo)
-			common.Logger("debug", "Repository added to update list. repository=%s branch=%s", repoPath, currentBranch)
-		} else {
-			common.Logger("debug", "Skipping non-git directory. directory=%s", repoPath)
-		}
+		result.Repos[i].CurrentBranch = branch
 	}
-
-	common.Logger("info", "Git repositories found. count=%d", len(repositories))
-	return repositories, nil
-}
-
-// UpdateRepositories updates all git repositories in the specified directory
-func UpdateRepositories(baseDir string) error {
-	return UpdateRepositoriesWithConfig(UpdateConfig{BaseDir: baseDir})
-}
-
-// UpdateRepositoriesWithConfig updates repositories with backup/filter/parallel support
-func UpdateRepositoriesWithConfig(cfg UpdateConfig) error {
-	repositories, err := FindRepositories(cfg.BaseDir)
-	if err != nil {
-		common.Logger("fatal", "Failed to find repositories: %v", err)
-	}
-	if len(repositories) == 0 {
-		common.Logger("warning", "No git repositories found. baseDir=%s", cfg.BaseDir)
-		return nil
-	}
-
-	// Apply filter if set
-	if cfg.Filter != nil {
-		var filtered []Repository
-		for _, r := range repositories {
-			if cfg.Filter.ShouldProcess(r.Name) {
-				filtered = append(filtered, r)
-			} else {
-				common.Logger("debug", "Repository excluded by filter. repository=%s", r.Name)
-			}
-		}
-		repositories = filtered
-	}
-
-	successCount := 0
-	errorCount := 0
-
-	for _, repo := range repositories {
-		fmt.Println("------------- BEGIN -------------")
-		common.Logger("info", "Updating repository. repository=%s path=%s branch=%s", repo.Name, repo.Path, repo.CurrentBranch)
-
-		if branches, err := GetBranches(repo.Path); err == nil {
-			common.Logger("debug", "Local branches:\n%s", branches)
-		}
-
-		// Backup if enabled
-		if cfg.BackupEnabled && cfg.BackupManager != nil {
-			if _, err := cfg.BackupManager.CreateBackup(repo.Path, repo.Name); err != nil {
-				common.Logger("error", "Failed to create backup. repository=%s error=%v", repo.Name, err)
-			}
-		}
-
-		fmt.Printf("[INFO] Updating repository: '%s' on branch '%s'\n", repo.Name, repo.CurrentBranch)
-		fmt.Println("If necessary, enter login/password when prompted.")
-
-		if err := PullRepository(repo.Path); err != nil {
-			common.Logger("error", "Failed to update repository. repository=%s error=%v", repo.Name, err)
-			errorCount++
-		} else {
-			successCount++
-		}
-
-		fmt.Println("---------------------------------")
-		fmt.Println()
-		fmt.Println()
-	}
-
-	common.Logger("info", "Repository update completed. total=%d success=%d errors=%d", len(repositories), successCount, errorCount)
-
-	if errorCount > 0 {
-		common.Logger("fatal", "Update completed with %d errors out of %d repositories", errorCount, len(repositories))
-	}
-	return nil
+	return result.Repos, nil
 }
